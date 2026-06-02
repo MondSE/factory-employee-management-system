@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import { Factory, UsersRound } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
@@ -25,7 +26,12 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Factories',
         href: '/factories',
-        icon: LayoutGrid,
+        icon: Factory,
+    },
+    {
+        title: 'Employees',
+        href: '/employees',
+        icon: UsersRound,
     },
 ];
 

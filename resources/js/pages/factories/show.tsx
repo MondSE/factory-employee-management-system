@@ -1,60 +1,142 @@
-import { usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
+
+type Employee = {
+    id: number;
+    firstname: string;
+    lastname: string;
+    email?: string;
+    phone?: string;
+};
 
 export default function FactoryShow() {
     const { factory } = usePage<any>().props;
 
-    const employees = factory?.employees ?? [];
+    const employees: Employee[] = factory?.employees ?? [];
+
+    if (!factory) {
+        return (
+            <div className="p-6 text-center text-gray-500">
+                Loading factory...
+            </div>
+        );
+    }
 
     return (
-        <div style={{ padding: 20 }}>
-            <h1>Factory Details</h1>
+        <>
+            <Head title="Factory Details" />
 
-            {/* FACTORY INFO */}
-            <div style={{ marginBottom: 20 }}>
-                <p>
-                    <b>Name:</b> {factory.factory_name}
-                </p>
-                <p>
-                    <b>Location:</b> {factory.location}
-                </p>
-                <p>
-                    <b>Email:</b> {factory.email ?? '-'}
-                </p>
-                <p>
-                    <b>Website:</b> {factory.website ?? '-'}
-                </p>
+            <div className="flex max-w-6xl flex-col gap-6 p-6">
+                {/* HEADER */}
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold">Factory Details</h1>
+
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() =>
+                                router.visit(`/factories/${factory.id}/edit`)
+                            }
+                            className="rounded bg-yellow-500 px-4 py-2 text-white"
+                        >
+                            Edit
+                        </button>
+
+                        <button
+                            onClick={() => router.visit('/factories')}
+                            className="rounded bg-gray-800 px-4 py-2 text-white"
+                        >
+                            Back
+                        </button>
+                    </div>
+                </div>
+
+                {/* FACTORY CARDS (like dashboard style) */}
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border p-5 shadow-sm">
+                        <p className="text-sm text-gray-500">Factory Name</p>
+                        <p className="text-lg font-semibold">
+                            {factory.factory_name}
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl border p-5 shadow-sm">
+                        <p className="text-sm text-gray-500">Location</p>
+                        <p className="text-lg font-semibold">
+                            {factory.location}
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl border p-5 shadow-sm">
+                        <p className="text-sm text-gray-500">Email</p>
+                        <p className="text-lg font-semibold">
+                            {factory.email ?? '-'}
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl border p-5 shadow-sm">
+                        <p className="text-sm text-gray-500">Website</p>
+                        <p className="text-lg font-semibold">
+                            {factory.website ?? '-'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* EMPLOYEE SUMMARY */}
+                <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-xl border p-4">
+                        <p className="text-sm text-gray-500">Total Employees</p>
+                        <p className="text-2xl font-bold">{employees.length}</p>
+                    </div>
+                </div>
+
+                {/* EMPLOYEE TABLE */}
+                <div className="overflow-hidden rounded-xl border">
+                    <div className="border-b p-4">
+                        <h2 className="text-lg font-semibold">Employees</h2>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50 text-left">
+                                <tr>
+                                    <th className="p-3">Name</th>
+                                    <th className="p-3">Email</th>
+                                    <th className="p-3">Phone</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {employees.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={3}
+                                            className="p-4 text-center text-gray-500"
+                                        >
+                                            No employees found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    employees.map((emp) => (
+                                        <tr
+                                            key={emp.id}
+                                            className="border-t hover:bg-gray-50"
+                                        >
+                                            <td className="p-3 font-medium">
+                                                {emp.firstname} {emp.lastname}
+                                            </td>
+                                            <td className="p-3">
+                                                {emp.email ?? '-'}
+                                            </td>
+                                            <td className="p-3">
+                                                {emp.phone ?? '-'}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-
-            <hr />
-
-            {/* EMPLOYEES */}
-            <h2>Employees</h2>
-
-            {employees.length === 0 ? (
-                <p>No employees found</p>
-            ) : (
-                <table border={1} width="100%" cellPadding={10}>
-                    <thead>
-                        <tr>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {employees.map((emp: any) => (
-                            <tr key={emp.id}>
-                                <td>{emp.firstname}</td>
-                                <td>{emp.lastname}</td>
-                                <td>{emp.email}</td>
-                                <td>{emp.phone}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
+        </>
     );
 }

@@ -27,6 +27,7 @@ class EmployeeController extends Controller
         return Inertia::render('employees/index', [
             'employees' => $query->latest()->paginate(10),
             'filters' => $request->only(['search']),
+            'factories' => Factory::select('id', 'factory_name')->get(),
         ]);
     }
 

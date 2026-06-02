@@ -1,104 +1,111 @@
 import { Head, usePage, router } from '@inertiajs/react';
-import { useRef, useState } from 'react';
-import FactoryForm from '@/components/FactoryForm';
-import FactoryTable from '@/components/FactoryTable';
+import { useRef, useState, useEffect } from 'react';
+import EmployeeTable from '@/components/EmployeeTable';
+import EmployeeForm from '@/components/EmployeeForm';
 import { Button } from '@/components/ui/button';
 import { BadgePlus } from 'lucide-react';
 
 type Factory = {
     id: number;
     factory_name: string;
-    location: string;
-    email?: string;
-    website?: string;
 };
 
-export default function FactoriesIndex() {
-    const { factories } = usePage<any>().props;
+type Employee = {
+    id: number;
+    firstname: string;
+    lastname: string;
+    email?: string;
+    phone?: string;
+    factory?: {
+        factory_name: string;
+    };
+};
 
-    const data: Factory[] = factories?.data ?? [];
-    const links = factories?.links ?? [];
+type PageProps = {
+    employees: {
+        data: Employee[];
+        links: any[];
+        total: number;
+        current_page: number;
+        last_page: number;
+    };
+    factories: Factory[];
+};
+
+export default function EmployeesIndex() {
+    const { employees, factories } = usePage<PageProps>().props;
+
+    const data = employees?.data ?? [];
+    const links = employees?.links ?? [];
 
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
-    const [selectedFactory, setSelectedFactory] = useState<Factory | null>(
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
         null,
     );
 
-    const [loading, setLoading] = useState(false);
+    const [searching, setSearching] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // SEARCH (with loading + error handling)
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, []);
+
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearch(value);
 
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
         timeoutRef.current = setTimeout(() => {
-            setLoading(true);
-            setError(null);
+            setSearching(true);
 
             router.get(
-                '/factories',
+                '/employees',
                 { search: value, page: 1 },
                 {
                     preserveState: true,
                     replace: true,
-                    onFinish: () => setLoading(false),
+                    onFinish: () => setSearching(false),
                     onError: () => {
-                        setError('Failed to load factories');
-                        setLoading(false);
+                        setError('Failed to load employees');
+                        setSearching(false);
                     },
                 },
             );
         }, 400);
     };
 
-    // DELETE (with loading + error handling)
     const handleDelete = (id: number) => {
-        if (!confirm('Delete this factory?')) return;
+        if (!confirm('Delete this employee?')) return;
 
-        setLoading(true);
-        setError(null);
-
-        router.delete(`/factories/${id}`, {
+        router.delete(`/employees/${id}`, {
             preserveScroll: true,
-            onSuccess: () => {
-                router.reload({
-                    only: ['factories'],
-                    onFinish: () => setLoading(false),
-                });
-            },
-            onError: () => {
-                setError('Failed to delete factory');
-                setLoading(false);
-            },
         });
     };
 
     const handleCreate = () => {
-        setSelectedFactory(null);
+        setSelectedEmployee(null);
         setShowModal(true);
     };
 
-    const handleEdit = (factory: Factory) => {
-        setSelectedFactory(factory);
+    const handleEdit = (employee: Employee) => {
+        setSelectedEmployee(employee);
         setShowModal(true);
     };
 
     return (
         <>
-            <Head title="Factories" />
+            <Head title="Employees" />
 
             <div className="flex flex-col gap-4 p-4">
                 {/* HEADER */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Factories</h1>
+                    <h1 className="text-2xl font-bold">Employees</h1>
 
                     <div className="flex gap-2">
                         <Button
@@ -111,8 +118,8 @@ export default function FactoriesIndex() {
                         <input
                             value={search}
                             onChange={handleSearch}
-                            placeholder="Search factories..."
-                            className="w-64 rounded-md border px-3 py-2 text-sm"
+                            placeholder="Search..."
+                            className="rounded border px-3 py-2 text-sm"
                         />
                     </div>
                 </div>
@@ -121,25 +128,23 @@ export default function FactoriesIndex() {
                 <div className="grid gap-4 md:grid-cols-3">
                     <div className="rounded-xl border p-4">
                         <p className="text-sm text-gray-500">Total Factories</p>
-                        <p className="text-2xl font-bold">{factories.total}</p>
+                        <p className="text-2xl font-bold">{factories.length}</p>
+                    </div>
+
+                    <div className="rounded-xl border p-4">
+                        <p className="text-sm text-gray-500">Total Employees</p>
+                        <p className="text-2xl font-bold">{employees.total}</p>
                     </div>
 
                     <div className="rounded-xl border p-4">
                         <p className="text-sm text-gray-500">Current Page</p>
                         <p className="text-2xl font-bold">
-                            {factories.current_page}
-                        </p>
-                    </div>
-
-                    <div className="rounded-xl border p-4">
-                        <p className="text-sm text-gray-500">Last Page</p>
-                        <p className="text-2xl font-bold">
-                            {factories.last_page}
+                            {employees.current_page}
                         </p>
                     </div>
                 </div>
 
-                {/* ERROR MESSAGE (GLOBAL) */}
+                {/* ERROR */}
                 {error && (
                     <div className="rounded border border-red-300 bg-red-50 p-3 text-red-600">
                         {error}
@@ -147,19 +152,17 @@ export default function FactoriesIndex() {
                 )}
 
                 {/* TABLE */}
-                <FactoryTable
+                <EmployeeTable
                     data={data}
-                    loading={loading}
-                    error={error}
-                    onDelete={handleDelete}
                     onEdit={handleEdit}
+                    onDelete={handleDelete}
                 />
 
                 {/* PAGINATION */}
-                <div className="flex flex-wrap justify-center gap-2">
-                    {links.map((link: any, index: number) => (
+                <div className="flex justify-center gap-2">
+                    {links.map((link: any, i: number) => (
                         <Button
-                            key={index}
+                            key={i}
                             disabled={!link.url}
                             onClick={() => link.url && router.visit(link.url)}
                             className={`rounded border px-3 py-1 text-sm ${
@@ -167,21 +170,20 @@ export default function FactoriesIndex() {
                                     ? 'bg-blue-500 text-white'
                                     : 'bg-white hover:bg-gray-500'
                             } ${!link.url ? 'opacity-50' : ''}`}
-                            dangerouslySetInnerHTML={{
-                                __html: link.label,
-                            }}
+                            dangerouslySetInnerHTML={{ __html: link.label }}
                         />
                     ))}
                 </div>
             </div>
 
-            {/* FORM MODAL */}
-            <FactoryForm
+            {/* MODAL */}
+            <EmployeeForm
                 show={showModal}
-                factory={selectedFactory}
+                employee={selectedEmployee}
+                factories={factories ?? []}
                 onClose={() => {
                     setShowModal(false);
-                    setSelectedFactory(null);
+                    setSelectedEmployee(null);
                 }}
             />
         </>
