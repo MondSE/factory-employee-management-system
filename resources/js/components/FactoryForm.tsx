@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Input } from './ui/input';
 
@@ -16,38 +16,15 @@ type Props = {
     factory: Factory | null;
 };
 
-const emptyForm = {
-    factory_name: '',
-    location: '',
-    email: '',
-    website: '',
-};
-
 export default function FactoryForm({ show, onClose, factory }: Props) {
     const [loading, setLoading] = useState(false);
 
-    const [form, setForm] = useState(() => ({
+    const [form, setForm] = useState({
         factory_name: factory?.factory_name ?? '',
         location: factory?.location ?? '',
         email: factory?.email ?? '',
         website: factory?.website ?? '',
-    }));
-
-    // ✅ Reset / fill form when modal opens
-    useEffect(() => {
-        if (!show) return;
-
-        if (factory) {
-            setForm({
-                factory_name: factory.factory_name ?? '',
-                location: factory.location ?? '',
-                email: factory.email ?? '',
-                website: factory.website ?? '',
-            });
-        } else {
-            setForm(emptyForm);
-        }
-    }, [show, factory]);
+    });
 
     if (!show) return null;
 
@@ -66,21 +43,16 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
 
         if (factory?.id) {
             router.put(`/factories/${factory.id}`, form, {
-                preserveScroll: true,
-                onFinish: () => setLoading(false),
-                onSuccess: () => {
+                onFinish: () => {
+                    setLoading(false);
                     onClose();
-                    router.reload({ only: ['factories'] });
                 },
             });
         } else {
             router.post('/factories', form, {
-                preserveScroll: true,
-                onFinish: () => setLoading(false),
-                onSuccess: () => {
-                    setForm(emptyForm);
+                onFinish: () => {
+                    setLoading(false);
                     onClose();
-                    router.reload({ only: ['factories'] });
                 },
             });
         }

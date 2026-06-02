@@ -44,14 +44,16 @@ export default function EmployeesIndex() {
         null,
     );
 
-    const [searching, setSearching] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // cleanup debounce
     useEffect(() => {
         return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
         };
     }, []);
 
@@ -59,10 +61,12 @@ export default function EmployeesIndex() {
         const value = e.target.value;
         setSearch(value);
 
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
 
         timeoutRef.current = setTimeout(() => {
-            setSearching(true);
+            setError(null);
 
             router.get(
                 '/employees',
@@ -70,10 +74,8 @@ export default function EmployeesIndex() {
                 {
                     preserveState: true,
                     replace: true,
-                    onFinish: () => setSearching(false),
                     onError: () => {
                         setError('Failed to load employees');
-                        setSearching(false);
                     },
                 },
             );
@@ -83,8 +85,13 @@ export default function EmployeesIndex() {
     const handleDelete = (id: number) => {
         if (!confirm('Delete this employee?')) return;
 
+        setError(null);
+
         router.delete(`/employees/${id}`, {
             preserveScroll: true,
+            onError: () => {
+                setError('Failed to delete employee');
+            },
         });
     };
 
@@ -168,9 +175,11 @@ export default function EmployeesIndex() {
                             className={`rounded border px-3 py-1 text-sm ${
                                 link.active
                                     ? 'bg-blue-500 text-white'
-                                    : 'bg-white hover:bg-gray-500'
+                                    : 'bg-white hover:bg-gray-200'
                             } ${!link.url ? 'opacity-50' : ''}`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
+                            dangerouslySetInnerHTML={{
+                                __html: link.label,
+                            }}
                         />
                     ))}
                 </div>

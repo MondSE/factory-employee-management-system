@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
 
 type Factory = {
@@ -22,14 +22,6 @@ type Props = {
     onClose: () => void;
 };
 
-const emptyForm: Employee = {
-    firstname: '',
-    lastname: '',
-    email: '',
-    phone: '',
-    factory_id: undefined,
-};
-
 export default function EmployeeForm({
     show,
     employee,
@@ -38,32 +30,15 @@ export default function EmployeeForm({
 }: Props) {
     const isEdit = !!employee?.id;
 
-    const [form, setForm] = useState<Employee>(() => ({
+    const [form, setForm] = useState<Employee>({
         firstname: employee?.firstname ?? '',
         lastname: employee?.lastname ?? '',
         email: employee?.email ?? '',
         phone: employee?.phone ?? '',
         factory_id: employee?.factory_id ?? undefined,
-    }));
+    });
 
     const [loading, setLoading] = useState(false);
-
-    // Reset form when modal opens
-    useEffect(() => {
-        if (!show) return;
-
-        if (employee) {
-            setForm({
-                firstname: employee.firstname ?? '',
-                lastname: employee.lastname ?? '',
-                email: employee.email ?? '',
-                phone: employee.phone ?? '',
-                factory_id: employee.factory_id ?? undefined,
-            });
-        } else {
-            setForm(emptyForm);
-        }
-    }, [show, employee]);
 
     if (!show) return null;
 
