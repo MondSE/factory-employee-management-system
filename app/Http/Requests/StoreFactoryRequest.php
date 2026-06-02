@@ -24,11 +24,10 @@ class StoreFactoryRequest extends FormRequest
     {
         return [
             //
-            'firstname' => 'required',
-            'lastname' => 'required',
-            'factory_id' => 'required|exists:factories,id',
+            'factory_name' => 'required',
+            'location' => 'required',
             'email' => 'nullable|email',
-            'phone' => 'nullable',
+            'website' => 'nullable|url',
         ];
     }
 }

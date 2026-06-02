@@ -24,6 +24,11 @@ class StoreEmployeeRequest extends FormRequest
     {
         return [
             //
+            'firstname' => 'required',
+            'lastname' => 'required',
+            'factory_id' => 'required|exists:factories,id',
+            'email' => 'nullable|email',
+            'phone' => 'nullable',
         ];
     }
 }
