@@ -16,17 +16,22 @@ type Props = {
     factory: Factory | null;
 };
 
+const emptyForm = {
+    factory_name: '',
+    location: '',
+    email: '',
+    website: '',
+};
+
 export default function FactoryForm({ show, onClose, factory }: Props) {
     const [loading, setLoading] = useState(false);
 
-    const [form, setForm] = useState({
+    const [form, setForm] = useState(() => ({
         factory_name: factory?.factory_name ?? '',
         location: factory?.location ?? '',
         email: factory?.email ?? '',
         website: factory?.website ?? '',
-    });
-
-    if (!show) return null;
+    }));
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -58,6 +63,8 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
         }
     };
 
+    if (!show) return null;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
@@ -72,7 +79,7 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                             Factory Name
                         </label>
                         <Input
-                            className="text-gray-700"
+                            className="text-black"
                             name="factory_name"
                             value={form.factory_name}
                             onChange={handleChange}
@@ -86,7 +93,7 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                             Location
                         </label>
                         <Input
-                            className="text-gray-700"
+                            className="text-black"
                             name="location"
                             value={form.location}
                             onChange={handleChange}
@@ -100,7 +107,7 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                             Email
                         </label>
                         <Input
-                            className="text-gray-700"
+                            className="text-black"
                             name="email"
                             type="email"
                             value={form.email}
@@ -114,7 +121,7 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                             Website
                         </label>
                         <Input
-                            className="text-gray-700"
+                            className="text-black"
                             name="website"
                             value={form.website}
                             onChange={handleChange}

@@ -40,8 +40,6 @@ export default function EmployeeForm({
 
     const [loading, setLoading] = useState(false);
 
-    if (!show) return null;
-
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     ) => {
@@ -74,6 +72,8 @@ export default function EmployeeForm({
         }
     };
 
+    if (!show) return null;
+
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
             <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
@@ -82,84 +82,52 @@ export default function EmployeeForm({
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* First Name */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700">
-                            First Name
-                        </label>
-                        <input
-                            name="firstname"
-                            value={form.firstname}
-                            onChange={handleChange}
-                            className="w-full rounded border p-2 text-gray-700"
-                            placeholder="Enter first name"
-                        />
-                    </div>
+                    <input
+                        name="firstname"
+                        value={form.firstname}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="First name"
+                    />
 
-                    {/* Last Name */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700">
-                            Last Name
-                        </label>
-                        <input
-                            name="lastname"
-                            value={form.lastname}
-                            onChange={handleChange}
-                            className="w-full rounded border p-2 text-gray-700"
-                            placeholder="Enter last name"
-                        />
-                    </div>
+                    <input
+                        name="lastname"
+                        value={form.lastname}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="Last name"
+                    />
 
-                    {/* Email */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700">
-                            Email
-                        </label>
-                        <input
-                            name="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            className="w-full rounded border p-2 text-gray-700"
-                            placeholder="Enter email"
-                        />
-                    </div>
+                    <input
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="Email"
+                    />
 
-                    {/* Phone */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700">
-                            Phone
-                        </label>
-                        <input
-                            name="phone"
-                            value={form.phone}
-                            onChange={handleChange}
-                            className="w-full rounded border p-2 text-gray-700"
-                            placeholder="Enter phone number"
-                        />
-                    </div>
+                    <input
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="Phone"
+                    />
 
-                    {/* Factory */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700">
-                            Factory
-                        </label>
+                    <select
+                        name="factory_id"
+                        value={form.factory_id ?? ''}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                    >
+                        <option value="">Select factory</option>
+                        {factories.map((factory) => (
+                            <option key={factory.id} value={factory.id}>
+                                {factory.factory_name}
+                            </option>
+                        ))}
+                    </select>
 
-                        <select
-                            name="factory_id"
-                            value={form.factory_id ?? ''}
-                            onChange={handleChange}
-                            className="w-full rounded border p-2 text-gray-700"
-                        >
-                            <option value="">Select factory</option>
-                            {factories.map((factory) => (
-                                <option key={factory.id} value={factory.id}>
-                                    {factory.factory_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Actions */}
                     <div className="flex justify-end gap-2 pt-2">
                         <button
                             type="button"

@@ -18,9 +18,21 @@ class Factory extends Model
     }
 
     protected static function booted()
-    {
-        static::created(fn ($model) => ModelEventService::log('created', $model));
-        static::updated(fn ($model) => ModelEventService::log('updated', $model));
-        static::deleted(fn ($model) => ModelEventService::log('deleted', $model));
-    }
+{
+    static::created(function ($model) {
+        ModelEventService::log('created', $model);
+    });
+
+    static::updated(function ($model) {
+        ModelEventService::log(
+            'updated',
+            $model,
+            $model->getOriginal() // 👈 important
+        );
+    });
+
+    static::deleted(function ($model) {
+        ModelEventService::log('deleted', $model);
+    });
+}
 }

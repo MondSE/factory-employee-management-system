@@ -43,7 +43,6 @@ export default function EmployeesIndex() {
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
         null,
     );
-
     const [error, setError] = useState<string | null>(null);
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,6 +102,11 @@ export default function EmployeesIndex() {
     const handleEdit = (employee: Employee) => {
         setSelectedEmployee(employee);
         setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setSelectedEmployee(null);
     };
 
     return (
@@ -187,13 +191,11 @@ export default function EmployeesIndex() {
 
             {/* MODAL */}
             <EmployeeForm
+                key={selectedEmployee?.id ?? 'create'} // ✅ FIXED
                 show={showModal}
                 employee={selectedEmployee}
                 factories={factories ?? []}
-                onClose={() => {
-                    setShowModal(false);
-                    setSelectedEmployee(null);
-                }}
+                onClose={closeModal}
             />
         </>
     );

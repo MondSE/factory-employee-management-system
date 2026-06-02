@@ -19,11 +19,6 @@ import { Factory, UsersRound } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
         title: 'Factories',
         href: '/factories',
         icon: Factory,
