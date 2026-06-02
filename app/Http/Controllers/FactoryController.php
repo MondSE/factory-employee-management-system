@@ -52,12 +52,19 @@ class FactoryController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id, Request $request)
     {
-        $factory = Factory::with('employees')->findOrFail($id);
+        $factory = Factory::findOrFail($id);
+
+        $employees = Employee::where('factory_id', $id)
+            ->latest()
+            ->paginate(5); // change page size here
 
         return Inertia::render('factories/show', [
-            'factory' => $factory,
+            'factory' => [
+                ...$factory->toArray(),
+                'employees' => $employees,
+            ],
         ]);
     }
 

@@ -16,73 +16,74 @@ type Props = {
     factory: Factory | null;
 };
 
+const emptyForm = {
+    factory_name: '',
+    location: '',
+    email: '',
+    website: '',
+};
+
 export default function FactoryForm({ show, onClose, factory }: Props) {
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({
-        factory_name: '',
-        location: '',
-        email: '',
-        website: '',
-    });
 
-    // ✅ Fill form when editing OR reset when adding
+    const [form, setForm] = useState(() => ({
+        factory_name: factory?.factory_name ?? '',
+        location: factory?.location ?? '',
+        email: factory?.email ?? '',
+        website: factory?.website ?? '',
+    }));
+
+    // ✅ Reset / fill form when modal opens
     useEffect(() => {
         if (!show) return;
 
         if (factory) {
             setForm({
-                factory_name: factory.factory_name,
-                location: factory.location,
+                factory_name: factory.factory_name ?? '',
+                location: factory.location ?? '',
                 email: factory.email ?? '',
                 website: factory.website ?? '',
             });
         } else {
-            setForm({
-                factory_name: '',
-                location: '',
-                email: '',
-                website: '',
-            });
+            setForm(emptyForm);
         }
-    }, [factory, show]);
+    }, [show, factory]);
 
     if (!show) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
-        });
+        const { name, value } = e.target;
+
+        setForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        const request = factory
-            ? router.put(`/factories/${factory.id}`, form, {
-                  preserveScroll: true,
-                  onFinish: () => setLoading(false),
-                  onSuccess: () => {
-                      onClose();
-                      router.reload({ only: ['factories'] });
-                  },
-              })
-            : router.post('/factories', form, {
-                  preserveScroll: true,
-                  onFinish: () => setLoading(false),
-                  onSuccess: () => {
-                      setForm({
-                          factory_name: '',
-                          location: '',
-                          email: '',
-                          website: '',
-                      });
-
-                      onClose();
-                      router.reload({ only: ['factories'] });
-                  },
-              });
+        if (factory?.id) {
+            router.put(`/factories/${factory.id}`, form, {
+                preserveScroll: true,
+                onFinish: () => setLoading(false),
+                onSuccess: () => {
+                    onClose();
+                    router.reload({ only: ['factories'] });
+                },
+            });
+        } else {
+            router.post('/factories', form, {
+                preserveScroll: true,
+                onFinish: () => setLoading(false),
+                onSuccess: () => {
+                    setForm(emptyForm);
+                    onClose();
+                    router.reload({ only: ['factories'] });
+                },
+            });
+        }
     };
 
     return (

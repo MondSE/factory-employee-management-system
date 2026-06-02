@@ -30,7 +30,7 @@ export default function FactoriesIndex() {
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // SEARCH (with loading + error handling)
+    // SEARCH
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearch(value);
@@ -59,7 +59,7 @@ export default function FactoriesIndex() {
         }, 400);
     };
 
-    // DELETE (with loading + error handling)
+    // DELETE
     const handleDelete = (id: number) => {
         if (!confirm('Delete this factory?')) return;
 
@@ -69,10 +69,8 @@ export default function FactoriesIndex() {
         router.delete(`/factories/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                router.reload({
-                    only: ['factories'],
-                    onFinish: () => setLoading(false),
-                });
+                setLoading(false);
+                router.reload({ only: ['factories'] });
             },
             onError: () => {
                 setError('Failed to delete factory');
@@ -139,7 +137,7 @@ export default function FactoriesIndex() {
                     </div>
                 </div>
 
-                {/* ERROR MESSAGE (GLOBAL) */}
+                {/* ERROR */}
                 {error && (
                     <div className="rounded border border-red-300 bg-red-50 p-3 text-red-600">
                         {error}
@@ -165,7 +163,7 @@ export default function FactoriesIndex() {
                             className={`rounded border px-3 py-1 text-sm ${
                                 link.active
                                     ? 'bg-blue-500 text-white'
-                                    : 'bg-white hover:bg-gray-500'
+                                    : 'bg-white hover:bg-gray-200'
                             } ${!link.url ? 'opacity-50' : ''}`}
                             dangerouslySetInnerHTML={{
                                 __html: link.label,
@@ -175,7 +173,7 @@ export default function FactoriesIndex() {
                 </div>
             </div>
 
-            {/* FORM MODAL */}
+            {/* MODAL */}
             <FactoryForm
                 show={showModal}
                 factory={selectedFactory}

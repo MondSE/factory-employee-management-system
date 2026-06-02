@@ -22,6 +22,14 @@ type Props = {
     onClose: () => void;
 };
 
+const emptyForm: Employee = {
+    firstname: '',
+    lastname: '',
+    email: '',
+    phone: '',
+    factory_id: undefined,
+};
+
 export default function EmployeeForm({
     show,
     employee,
@@ -30,17 +38,20 @@ export default function EmployeeForm({
 }: Props) {
     const isEdit = !!employee?.id;
 
-    const [form, setForm] = useState<Employee>({
-        firstname: '',
-        lastname: '',
-        email: '',
-        phone: '',
-        factory_id: undefined,
-    });
+    const [form, setForm] = useState<Employee>(() => ({
+        firstname: employee?.firstname ?? '',
+        lastname: employee?.lastname ?? '',
+        email: employee?.email ?? '',
+        phone: employee?.phone ?? '',
+        factory_id: employee?.factory_id ?? undefined,
+    }));
 
     const [loading, setLoading] = useState(false);
 
+    // Reset form when modal opens
     useEffect(() => {
+        if (!show) return;
+
         if (employee) {
             setForm({
                 firstname: employee.firstname ?? '',
@@ -50,15 +61,9 @@ export default function EmployeeForm({
                 factory_id: employee.factory_id ?? undefined,
             });
         } else {
-            setForm({
-                firstname: '',
-                lastname: '',
-                email: '',
-                phone: '',
-                factory_id: undefined,
-            });
+            setForm(emptyForm);
         }
-    }, [employee]);
+    }, [show, employee]);
 
     if (!show) return null;
 
@@ -158,7 +163,7 @@ export default function EmployeeForm({
                         />
                     </div>
 
-                    {/* Factory Selection */}
+                    {/* Factory */}
                     <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-700">
                             Factory

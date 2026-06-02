@@ -11,7 +11,7 @@ type Employee = {
 export default function FactoryShow() {
     const { factory } = usePage<any>().props;
 
-    const employees: Employee[] = factory?.employees ?? [];
+    const employees = factory?.employees;
 
     if (!factory) {
         return (
@@ -20,6 +20,15 @@ export default function FactoryShow() {
             </div>
         );
     }
+
+    const goToPage = (url: string | null) => {
+        if (url) {
+            router.visit(url, {
+                preserveScroll: true,
+                preserveState: true,
+            });
+        }
+    };
 
     return (
         <>
@@ -49,7 +58,7 @@ export default function FactoryShow() {
                     </div>
                 </div>
 
-                {/* FACTORY CARDS (like dashboard style) */}
+                {/* FACTORY CARDS */}
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="rounded-xl border p-5 shadow-sm">
                         <p className="text-sm text-gray-500">Factory Name</p>
@@ -84,7 +93,9 @@ export default function FactoryShow() {
                 <div className="grid gap-4 md:grid-cols-3">
                     <div className="rounded-xl border p-4">
                         <p className="text-sm text-gray-500">Total Employees</p>
-                        <p className="text-2xl font-bold">{employees.length}</p>
+                        <p className="text-2xl font-bold">
+                            {employees?.total ?? 0}
+                        </p>
                     </div>
                 </div>
 
@@ -96,7 +107,7 @@ export default function FactoryShow() {
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-50 text-left">
+                            <thead className="text-center">
                                 <tr>
                                     <th className="p-3">Name</th>
                                     <th className="p-3">Email</th>
@@ -105,7 +116,7 @@ export default function FactoryShow() {
                             </thead>
 
                             <tbody>
-                                {employees.length === 0 ? (
+                                {employees?.data?.length === 0 ? (
                                     <tr>
                                         <td
                                             colSpan={3}
@@ -115,10 +126,10 @@ export default function FactoryShow() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    employees.map((emp) => (
+                                    employees?.data?.map((emp: Employee) => (
                                         <tr
                                             key={emp.id}
-                                            className="border-t hover:bg-gray-50"
+                                            className="border-t text-center hover:bg-gray-50"
                                         >
                                             <td className="p-3 font-medium">
                                                 {emp.firstname} {emp.lastname}
@@ -135,6 +146,36 @@ export default function FactoryShow() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* PAGINATION */}
+                    {employees?.links && (
+                        <div className="flex items-center justify-between p-4">
+                            <button
+                                disabled={!employees.prev_page_url}
+                                onClick={() =>
+                                    goToPage(employees.prev_page_url)
+                                }
+                                className="rounded border px-3 py-1 disabled:opacity-50"
+                            >
+                                Previous
+                            </button>
+
+                            <p className="text-sm text-gray-500">
+                                Page {employees.current_page} of{' '}
+                                {employees.last_page}
+                            </p>
+
+                            <button
+                                disabled={!employees.next_page_url}
+                                onClick={() =>
+                                    goToPage(employees.next_page_url)
+                                }
+                                className="rounded border px-3 py-1 disabled:opacity-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </>
