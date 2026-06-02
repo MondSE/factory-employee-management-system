@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { Head, usePage, router } from '@inertiajs/react';
+import { useState } from 'react';
 
 type Factory = {
     id: number;
@@ -8,122 +9,177 @@ type Factory = {
     website?: string;
 };
 
-export default function Factories() {
-    const [factories, setFactories] = useState<Factory[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [search, setSearch] = useState<string>('');
-    const [error, setError] = useState<string | null>(null);
+export default function FactoriesIndex() {
+    const { factories } = usePage<any>().props;
 
-    // debounce search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchFactories();
-        }, 500);
+    const data: Factory[] = factories?.data ?? [];
+    const links = factories?.links ?? [];
 
-        return () => clearTimeout(timer);
-    }, [search]);
+    const [search, setSearch] = useState('');
 
-    useEffect(() => {
-        fetchFactories();
-    }, []);
+    let timeout: any;
 
-    const fetchFactories = async () => {
-        setLoading(true);
-        setError(null);
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearch(value);
 
-        try {
-            const res = await fetch(`/api/factories?search=${search}`);
+        clearTimeout(timeout);
 
-            if (!res.ok) throw new Error('Failed to fetch factories');
-
-            const json = await res.json();
-            setFactories(json.data);
-        } catch (err: any) {
-            setError(err.message || 'Something went wrong');
-        }
-
-        setLoading(false);
+        timeout = setTimeout(() => {
+            router.get(
+                '/factories',
+                { search: value, page: 1 },
+                {
+                    preserveState: true,
+                    replace: true,
+                },
+            );
+        }, 400);
     };
 
-    const deleteFactory = async (id: number) => {
-        const confirmDelete = confirm('Delete this factory?');
-        if (!confirmDelete) return;
+    const handleDelete = (id: number) => {
+        if (!confirm('Delete this factory?')) return;
 
-        setLoading(true);
-
-        try {
-            const res = await fetch(`/api/factories/${id}`, {
-                method: 'DELETE',
-            });
-
-            if (!res.ok) throw new Error('Delete failed');
-
-            // refresh list after delete
-            fetchFactories();
-        } catch (err: any) {
-            setError(err.message);
-        }
-
-        setLoading(false);
+        router.delete(`/factories/${id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                router.reload({ only: ['factories'] });
+            },
+        });
     };
 
     return (
-        <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-            {/* HEADER */}
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <h1>Factories</h1>
-            </div>
+        <>
+            <Head title="Factories" />
 
-            {/* SEARCH */}
-            <input
-                type="text"
-                placeholder="Search factories..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                    padding: '10px',
-                    width: '300px',
-                    marginBottom: '20px',
-                }}
-            />
+            <div className="flex flex-col gap-4 p-4">
+                {/* HEADER */}
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold">Factories</h1>
 
-            {/* STATES */}
-            {loading && <p>Loading factories...</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+                    <input
+                        value={search}
+                        onChange={handleSearch}
+                        placeholder="Search factories..."
+                        className="w-64 rounded-md border px-3 py-2 text-sm"
+                    />
+                </div>
 
-            {!loading && factories.length === 0 && <p>No factories found.</p>}
+                {/* CARDS */}
+                <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-xl border p-4">
+                        <p className="text-sm text-gray-500">Total Factories</p>
+                        <p className="text-2xl font-bold">{factories.total}</p>
+                    </div>
 
-            {/* TABLE */}
-            <table width="100%" cellPadding={10} border={1}>
-                <thead>
-                    <tr>
-                        <th>Factory Name</th>
-                        <th>Location</th>
-                        <th>Email</th>
-                        <th>Website</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+                    <div className="rounded-xl border p-4">
+                        <p className="text-sm text-gray-500">Current Page</p>
+                        <p className="text-2xl font-bold">
+                            {factories.current_page}
+                        </p>
+                    </div>
 
-                <tbody>
-                    {factories.map((factory) => (
-                        <tr key={factory.id}>
-                            <td>{factory.factory_name}</td>
-                            <td>{factory.location}</td>
-                            <td>{factory.email || '-'}</td>
-                            <td>{factory.website || '-'}</td>
-                            <td>
-                                <button
-                                    onClick={() => deleteFactory(factory.id)}
-                                    style={{ color: 'red' }}
-                                >
-                                    Delete
-                                </button>
-                            </td>
-                        </tr>
+                    <div className="rounded-xl border p-4">
+                        <p className="text-sm text-gray-500">Last Page</p>
+                        <p className="text-2xl font-bold">
+                            {factories.last_page}
+                        </p>
+                    </div>
+                </div>
+
+                {/* TABLE */}
+                <div className="overflow-hidden rounded-xl border">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 text-left">
+                            <tr>
+                                <th className="p-3">Name</th>
+                                <th className="p-3">Location</th>
+                                <th className="p-3">Email</th>
+                                <th className="p-3">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {data.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="p-4 text-center">
+                                        No factories found
+                                    </td>
+                                </tr>
+                            ) : (
+                                data.map((f) => (
+                                    <tr
+                                        key={f.id}
+                                        className="border-t hover:bg-gray-50"
+                                    >
+                                        <td className="p-3 font-medium">
+                                            {f.factory_name}
+                                        </td>
+
+                                        <td className="p-3">{f.location}</td>
+
+                                        <td className="p-3">
+                                            {f.email ?? '-'}
+                                        </td>
+
+                                        <td className="flex gap-2 p-3">
+                                            <button
+                                                onClick={() =>
+                                                    router.visit(
+                                                        `/factories/${f.id}`,
+                                                    )
+                                                }
+                                                className="rounded bg-green-500 px-3 py-1 text-white"
+                                            >
+                                                View
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    router.visit(
+                                                        `/factories/${f.id}/edit`,
+                                                    )
+                                                }
+                                                className="rounded bg-yellow-500 px-3 py-1 text-white"
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(f.id)
+                                                }
+                                                className="rounded bg-red-500 px-3 py-1 text-white"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* PAGINATION */}
+                <div className="flex flex-wrap justify-center gap-2">
+                    {links.map((link: any, index: number) => (
+                        <button
+                            key={index}
+                            disabled={!link.url}
+                            onClick={() => link.url && router.visit(link.url)}
+                            className={`rounded border px-3 py-1 text-sm ${
+                                link.active
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-white hover:bg-gray-100'
+                            } ${!link.url ? 'opacity-50' : ''}`}
+                            dangerouslySetInnerHTML={{
+                                __html: link.label,
+                            }}
+                        />
                     ))}
-                </tbody>
-            </table>
-        </div>
+                </div>
+            </div>
+        </>
     );
 }
