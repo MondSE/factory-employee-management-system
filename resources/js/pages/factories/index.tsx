@@ -1,5 +1,9 @@
 import { Head, usePage, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import FactoryForm from '@/components/FactoryForm';
+import FactoryTable from '@/components/FactoryTable';
+import { Button } from '@/components/ui/button';
+import { BadgePlus } from 'lucide-react';
 
 type Factory = {
     id: number;
@@ -16,36 +20,76 @@ export default function FactoriesIndex() {
     const links = factories?.links ?? [];
 
     const [search, setSearch] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [selectedFactory, setSelectedFactory] = useState<Factory | null>(
+        null,
+    );
 
-    let timeout: any;
+    // NEW: UI states for table
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // SEARCH (with loading + error handling)
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearch(value);
 
-        clearTimeout(timeout);
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
 
-        timeout = setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
+            setLoading(true);
+            setError(null);
+
             router.get(
                 '/factories',
                 { search: value, page: 1 },
                 {
                     preserveState: true,
                     replace: true,
+                    onFinish: () => setLoading(false),
+                    onError: () => {
+                        setError('Failed to load factories');
+                        setLoading(false);
+                    },
                 },
             );
         }, 400);
     };
 
+    // DELETE (with loading + error handling)
     const handleDelete = (id: number) => {
         if (!confirm('Delete this factory?')) return;
+
+        setLoading(true);
+        setError(null);
 
         router.delete(`/factories/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                router.reload({ only: ['factories'] });
+                router.reload({
+                    only: ['factories'],
+                    onFinish: () => setLoading(false),
+                });
+            },
+            onError: () => {
+                setError('Failed to delete factory');
+                setLoading(false);
             },
         });
+    };
+
+    const handleCreate = () => {
+        setSelectedFactory(null);
+        setShowModal(true);
+    };
+
+    const handleEdit = (factory: Factory) => {
+        setSelectedFactory(factory);
+        setShowModal(true);
     };
 
     return (
@@ -57,12 +101,21 @@ export default function FactoriesIndex() {
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Factories</h1>
 
-                    <input
-                        value={search}
-                        onChange={handleSearch}
-                        placeholder="Search factories..."
-                        className="w-64 rounded-md border px-3 py-2 text-sm"
-                    />
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={handleCreate}
+                            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-800"
+                        >
+                            <BadgePlus />
+                        </Button>
+
+                        <input
+                            value={search}
+                            onChange={handleSearch}
+                            placeholder="Search factories..."
+                            className="w-64 rounded-md border px-3 py-2 text-sm"
+                        />
+                    </div>
                 </div>
 
                 {/* CARDS */}
@@ -87,91 +140,33 @@ export default function FactoriesIndex() {
                     </div>
                 </div>
 
+                {/* ERROR MESSAGE (GLOBAL) */}
+                {error && (
+                    <div className="rounded border border-red-300 bg-red-50 p-3 text-red-600">
+                        {error}
+                    </div>
+                )}
+
                 {/* TABLE */}
-                <div className="overflow-hidden rounded-xl border">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50 text-left">
-                            <tr>
-                                <th className="p-3">Name</th>
-                                <th className="p-3">Location</th>
-                                <th className="p-3">Email</th>
-                                <th className="p-3">Actions</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {data.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="p-4 text-center">
-                                        No factories found
-                                    </td>
-                                </tr>
-                            ) : (
-                                data.map((f) => (
-                                    <tr
-                                        key={f.id}
-                                        className="border-t hover:bg-gray-50"
-                                    >
-                                        <td className="p-3 font-medium">
-                                            {f.factory_name}
-                                        </td>
-
-                                        <td className="p-3">{f.location}</td>
-
-                                        <td className="p-3">
-                                            {f.email ?? '-'}
-                                        </td>
-
-                                        <td className="flex gap-2 p-3">
-                                            <button
-                                                onClick={() =>
-                                                    router.visit(
-                                                        `/factories/${f.id}`,
-                                                    )
-                                                }
-                                                className="rounded bg-green-500 px-3 py-1 text-white"
-                                            >
-                                                View
-                                            </button>
-
-                                            <button
-                                                onClick={() =>
-                                                    router.visit(
-                                                        `/factories/${f.id}/edit`,
-                                                    )
-                                                }
-                                                className="rounded bg-yellow-500 px-3 py-1 text-white"
-                                            >
-                                                Edit
-                                            </button>
-
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(f.id)
-                                                }
-                                                className="rounded bg-red-500 px-3 py-1 text-white"
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                <FactoryTable
+                    data={data}
+                    loading={loading}
+                    error={error}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                />
 
                 {/* PAGINATION */}
                 <div className="flex flex-wrap justify-center gap-2">
                     {links.map((link: any, index: number) => (
-                        <button
+                        <Button
                             key={index}
                             disabled={!link.url}
                             onClick={() => link.url && router.visit(link.url)}
                             className={`rounded border px-3 py-1 text-sm ${
                                 link.active
                                     ? 'bg-blue-500 text-white'
-                                    : 'bg-white hover:bg-gray-100'
+                                    : 'bg-white hover:bg-gray-500'
                             } ${!link.url ? 'opacity-50' : ''}`}
                             dangerouslySetInnerHTML={{
                                 __html: link.label,
@@ -180,6 +175,16 @@ export default function FactoriesIndex() {
                     ))}
                 </div>
             </div>
+
+            {/* FORM MODAL */}
+            <FactoryForm
+                show={showModal}
+                factory={selectedFactory}
+                onClose={() => {
+                    setShowModal(false);
+                    setSelectedFactory(null);
+                }}
+            />
         </>
     );
 }
