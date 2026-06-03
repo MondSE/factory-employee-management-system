@@ -175,6 +175,7 @@ export default function FactoriesIndex() {
 
             {/* MODAL */}
             <FactoryForm
+                key={selectedFactory?.id ?? 'create'} // 🔥 FIX IS HERE
                 show={showModal}
                 factory={selectedFactory}
                 onClose={() => {

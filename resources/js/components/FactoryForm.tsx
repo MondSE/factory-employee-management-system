@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Input } from './ui/input';
 
@@ -25,34 +25,18 @@ const emptyForm = {
 
 export default function FactoryForm({ show, onClose, factory }: Props) {
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState(emptyForm);
 
-    // ✅ safer sync (prevents unnecessary re-render loops in CI lint)
-    useEffect(() => {
-        if (!show) return;
+    // 🔥 initialize form based on factory (runs only on mount because of key)
+    const [form, setForm] = useState(() => {
+        if (!factory) return emptyForm;
 
-        if (factory) {
-            const nextForm = {
-                factory_name: factory.factory_name ?? '',
-                location: factory.location ?? '',
-                email: factory.email ?? '',
-                website: factory.website ?? '',
-            };
-
-            setForm((prev) => {
-                // avoid setting same state again (lint-safe)
-                const isSame =
-                    prev.factory_name === nextForm.factory_name &&
-                    prev.location === nextForm.location &&
-                    prev.email === nextForm.email &&
-                    prev.website === nextForm.website;
-
-                return isSame ? prev : nextForm;
-            });
-        } else {
-            setForm(emptyForm);
-        }
-    }, [factory?.id, show]);
+        return {
+            factory_name: factory.factory_name ?? '',
+            location: factory.location ?? '',
+            email: factory.email ?? '',
+            website: factory.website ?? '',
+        };
+    });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -76,7 +60,6 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
             ? router.put(`/factories/${factory.id}`, form)
             : router.post('/factories', form);
 
-        // Inertia doesn't return promise by default → use events
         router.on('finish', () => {
             setLoading(false);
             handleClose();
@@ -94,14 +77,13 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                     {factory ? 'Edit Factory' : 'Add Factory'}
                 </h2>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4 text-black">
                     {/* Factory Name */}
                     <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">
                             Factory Name
                         </label>
                         <Input
-                            className="text-black"
                             name="factory_name"
                             value={form.factory_name}
                             onChange={handleChange}
@@ -115,7 +97,6 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                             Location
                         </label>
                         <Input
-                            className="text-black"
                             name="location"
                             value={form.location}
                             onChange={handleChange}
@@ -129,7 +110,6 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                             Email
                         </label>
                         <Input
-                            className="text-black"
                             name="email"
                             type="email"
                             value={form.email}
@@ -143,7 +123,6 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                             Website
                         </label>
                         <Input
-                            className="text-black"
                             name="website"
                             value={form.website}
                             onChange={handleChange}
