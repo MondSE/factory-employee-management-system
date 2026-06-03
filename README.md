@@ -90,10 +90,10 @@ The project was developed using an iterative full-stack approach:
 
 ### Backend (Laravel)
 
+```bash
 1. Clone the repository:
 
-```bash
-git clone https://github.com/your-username/factory-employee-management-system.git
+git clone https://github.com/mondse/factory-employee-management-system.git
 cd factory-employee-management-system
 
 2. Install PHP dependencies:
@@ -113,17 +113,14 @@ DB_PASSWORD = your database password
 6. Run database migrations:
 php artisan migrate
 
-7. Start the Laravel development server:
-php artisan serve
+7. Start the Laravel and Frontend development server:
+composer dev
 
 
 ### Frontend (React / Vite)
 
 1. Install Node dependencies:
 npm install
-
-2. Start the frontend development server:
-npm run dev
 
 
 ### Running Tests
