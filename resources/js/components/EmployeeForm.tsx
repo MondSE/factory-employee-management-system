@@ -1,95 +1,78 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import type { Employee } from '@/types/employee';
 
 type Factory = {
-    id?: number;
+    id: number;
     factory_name: string;
-    location: string;
-    email: string;
+};
+
+type Employee = {
+    id?: number;
+    firstname: string;
+    lastname: string;
+    email?: string;
+    phone?: string;
+    factory_id?: number;
 };
 
 type Props = {
     show: boolean;
-    factory: Factory | null;
+    employee: Employee | null;
+    factories: Factory[];
     onClose: () => void;
     onSuccess?: () => void;
 };
 
-const emptyForm: Factory = {
-    factory_name: '',
-    location: '',
-    email: '',
-};
-
-export default function FactoryForm({
+export default function EmployeeForm({
     show,
-    factory,
+    employee,
+    factories,
     onClose,
     onSuccess,
 }: Props) {
-    const isEdit = !!factory?.id;
+    const isEdit = !!employee?.id;
 
-    // Key fix: initialize state only once
-    const [form, setForm] = useState<Factory>(emptyForm);
+    const [form, setForm] = useState<Employee>({
+        firstname: employee?.firstname ?? '',
+        lastname: employee?.lastname ?? '',
+        email: employee?.email ?? '',
+        phone: employee?.phone ?? '',
+        factory_id: employee?.factory_id ?? undefined,
+    });
+
     const [loading, setLoading] = useState(false);
 
-    // IMPORTANT: no useEffect anymore (fixes ESLint warning completely)
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    ) => {
         const { name, value } = e.target;
 
         setForm((prev) => ({
             ...prev,
-            [name]: value,
+            [name]: name === 'factory_id' ? Number(value) || undefined : value,
         }));
-    };
-
-    const resetForm = () => {
-        setForm({
-            factory_name: factory?.factory_name ?? '',
-            location: factory?.location ?? '',
-            email: factory?.email ?? '',
-        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        const options = {
-            onFinish: () => {
-                setLoading(false);
-                onClose();
-                onSuccess?.();
-            },
-        };
-
-        if (isEdit && factory?.id) {
-            router.put(`/factories/${factory.id}`, form, options);
-        } else {
-            router.post('/factories', form, options);
-        }
-    };
-
-    // FIX: reset form when modal opens/closes or factory changes
-    // instead of useEffect (avoids ESLint warning)
-    const handleOpen = () => {
-        if (factory) {
-            setForm({
-                factory_name: factory.factory_name ?? '',
-                location: factory.location ?? '',
-                email: factory.email ?? '',
+        if (isEdit && employee?.id) {
+            router.put(`/employees/${employee.id}`, form, {
+                onFinish: () => {
+                    setLoading(false);
+                    onClose();
+                },
             });
         } else {
-            setForm(emptyForm);
+            router.post('/employees', form, {
+                onFinish: () => {
+                    setLoading(false);
+                    onClose();
+                },
+            });
         }
     };
-
-    // trigger reset when component becomes visible
-    if (show && form.factory_name === '' && factory) {
-        handleOpen();
-    }
 
     if (!show) return null;
 
@@ -97,24 +80,24 @@ export default function FactoryForm({
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
             <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
                 <h2 className="mb-4 text-lg font-bold text-gray-700">
-                    {isEdit ? 'Edit Factory' : 'Create Factory'}
+                    {isEdit ? 'Edit Employee' : 'Create Employee'}
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
-                        name="factory_name"
-                        value={form.factory_name}
+                        name="firstname"
+                        value={form.firstname}
                         onChange={handleChange}
                         className="w-full rounded border p-2 text-gray-700"
-                        placeholder="Factory name"
+                        placeholder="First name"
                     />
 
                     <input
-                        name="location"
-                        value={form.location}
+                        name="lastname"
+                        value={form.lastname}
                         onChange={handleChange}
                         className="w-full rounded border p-2 text-gray-700"
-                        placeholder="Location"
+                        placeholder="Last name"
                     />
 
                     <input
@@ -124,6 +107,28 @@ export default function FactoryForm({
                         className="w-full rounded border p-2 text-gray-700"
                         placeholder="Email"
                     />
+
+                    <input
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="Phone"
+                    />
+
+                    <select
+                        name="factory_id"
+                        value={form.factory_id ?? ''}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                    >
+                        <option value="">Select factory</option>
+                        {factories.map((factory) => (
+                            <option key={factory.id} value={factory.id}>
+                                {factory.factory_name}
+                            </option>
+                        ))}
+                    </select>
 
                     <div className="flex justify-end gap-2 pt-2">
                         <button
@@ -135,8 +140,8 @@ export default function FactoryForm({
                         </button>
 
                         <button
-                            type="submit"
                             disabled={loading}
+                            type="submit"
                             className="rounded bg-blue-600 px-3 py-1 text-white"
                         >
                             {loading
