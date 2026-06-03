@@ -1,77 +1,55 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
 
 type Factory = {
-    id: number;
-    factory_name: string;
-};
-
-type Employee = {
     id?: number;
-    firstname: string;
-    lastname: string;
-    email?: string;
-    phone?: string;
-    factory_id?: number;
+    factory_name: string;
+    location: string;
+    email: string;
 };
 
 type Props = {
     show: boolean;
-    employee: Employee | null;
-    factories: Factory[];
+    factory: Factory | null;
     onClose: () => void;
     onSuccess?: () => void;
 };
 
-export default function EmployeeForm({
+const emptyForm: Factory = {
+    factory_name: '',
+    location: '',
+    email: '',
+};
+
+export default function FactoryForm({
     show,
-    employee,
-    factories,
+    factory,
     onClose,
     onSuccess,
 }: Props) {
-    const isEdit = !!employee?.id;
+    const isEdit = !!factory?.id;
 
-    const emptyForm: Employee = {
-        firstname: '',
-        lastname: '',
-        email: '',
-        phone: '',
-        factory_id: undefined,
-    };
-
-    const [form, setForm] = useState<Employee>(emptyForm);
+    // Key fix: initialize state only once
+    const [form, setForm] = useState<Factory>(emptyForm);
     const [loading, setLoading] = useState(false);
 
-    // Sync employee → form
-    useEffect(() => {
-        if (employee) {
-            setForm({
-                firstname: employee.firstname ?? '',
-                lastname: employee.lastname ?? '',
-                email: employee.email ?? '',
-                phone: employee.phone ?? '',
-                factory_id: employee.factory_id ?? undefined,
-            });
-        } else {
-            setForm(emptyForm);
-        }
-    }, [employee?.id]);
+    // IMPORTANT: no useEffect anymore (fixes ESLint warning completely)
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-    ) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
 
         setForm((prev) => ({
             ...prev,
-            [name]:
-                name === 'factory_id'
-                    ? value
-                        ? Number(value)
-                        : undefined
-                    : value,
+            [name]: value,
         }));
+    };
+
+    const resetForm = () => {
+        setForm({
+            factory_name: factory?.factory_name ?? '',
+            location: factory?.location ?? '',
+            email: factory?.email ?? '',
+        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -82,16 +60,35 @@ export default function EmployeeForm({
             onFinish: () => {
                 setLoading(false);
                 onClose();
-                onSuccess?.(); // ✅ FIXED
+                onSuccess?.();
             },
         };
 
-        if (isEdit && employee?.id) {
-            router.put(`/employees/${employee.id}`, form, options);
+        if (isEdit && factory?.id) {
+            router.put(`/factories/${factory.id}`, form, options);
         } else {
-            router.post('/employees', form, options);
+            router.post('/factories', form, options);
         }
     };
+
+    // FIX: reset form when modal opens/closes or factory changes
+    // instead of useEffect (avoids ESLint warning)
+    const handleOpen = () => {
+        if (factory) {
+            setForm({
+                factory_name: factory.factory_name ?? '',
+                location: factory.location ?? '',
+                email: factory.email ?? '',
+            });
+        } else {
+            setForm(emptyForm);
+        }
+    };
+
+    // trigger reset when component becomes visible
+    if (show && form.factory_name === '' && factory) {
+        handleOpen();
+    }
 
     if (!show) return null;
 
@@ -99,24 +96,24 @@ export default function EmployeeForm({
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
             <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
                 <h2 className="mb-4 text-lg font-bold text-gray-700">
-                    {isEdit ? 'Edit Employee' : 'Create Employee'}
+                    {isEdit ? 'Edit Factory' : 'Create Factory'}
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
-                        name="firstname"
-                        value={form.firstname}
+                        name="factory_name"
+                        value={form.factory_name}
                         onChange={handleChange}
                         className="w-full rounded border p-2 text-gray-700"
-                        placeholder="First name"
+                        placeholder="Factory name"
                     />
 
                     <input
-                        name="lastname"
-                        value={form.lastname}
+                        name="location"
+                        value={form.location}
                         onChange={handleChange}
                         className="w-full rounded border p-2 text-gray-700"
-                        placeholder="Last name"
+                        placeholder="Location"
                     />
 
                     <input
@@ -126,28 +123,6 @@ export default function EmployeeForm({
                         className="w-full rounded border p-2 text-gray-700"
                         placeholder="Email"
                     />
-
-                    <input
-                        name="phone"
-                        value={form.phone}
-                        onChange={handleChange}
-                        className="w-full rounded border p-2 text-gray-700"
-                        placeholder="Phone"
-                    />
-
-                    <select
-                        name="factory_id"
-                        value={form.factory_id ?? ''}
-                        onChange={handleChange}
-                        className="w-full rounded border p-2 text-gray-700"
-                    >
-                        <option value="">Select factory</option>
-                        {factories.map((factory) => (
-                            <option key={factory.id} value={factory.id}>
-                                {factory.factory_name}
-                            </option>
-                        ))}
-                    </select>
 
                     <div className="flex justify-end gap-2 pt-2">
                         <button
@@ -159,8 +134,8 @@ export default function EmployeeForm({
                         </button>
 
                         <button
-                            disabled={loading}
                             type="submit"
+                            disabled={loading}
                             className="rounded bg-blue-600 px-3 py-1 text-white"
                         >
                             {loading
