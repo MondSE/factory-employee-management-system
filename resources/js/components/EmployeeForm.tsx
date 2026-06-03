@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import type { Employee } from '@/types/employee';
 
 type Factory = {
     id?: number;

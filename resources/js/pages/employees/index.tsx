@@ -4,21 +4,11 @@ import EmployeeTable from '@/components/EmployeeTable';
 import EmployeeForm from '@/components/EmployeeForm';
 import { Button } from '@/components/ui/button';
 import { BadgePlus } from 'lucide-react';
+import type { Employee } from '@/types/employee';
 
 type Factory = {
     id: number;
     factory_name: string;
-};
-
-type Employee = {
-    id: number;
-    firstname: string;
-    lastname: string;
-    email?: string;
-    phone?: string;
-    factory?: {
-        factory_name: string;
-    };
 };
 
 type PageProps = {
@@ -40,6 +30,7 @@ export default function EmployeesIndex() {
 
     const [search, setSearch] = useState(filters?.search ?? '');
     const [showModal, setShowModal] = useState(false);
+
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
         null,
     );
@@ -52,7 +43,7 @@ export default function EmployeesIndex() {
         };
     }, []);
 
-    // 🔥 SEARCH (Inertia reload instead of fetch)
+    // SEARCH
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearch(value);
@@ -71,15 +62,12 @@ export default function EmployeesIndex() {
         }, 400);
     };
 
-    // 🔥 DELETE (auto refresh via Inertia)
-    const handleDelete = async (id: number) => {
+    // DELETE
+    const handleDelete = (id: number) => {
         if (!confirm('Delete this employee?')) return;
 
         router.delete(`/employees/${id}`, {
             preserveScroll: true,
-            onSuccess: () => {
-                // Inertia automatically refreshes employees prop
-            },
         });
     };
 
@@ -121,7 +109,7 @@ export default function EmployeesIndex() {
                     </div>
                 </div>
 
-                {/* EMPTY STATE */}
+                {/* EMPTY */}
                 {employees.data.length === 0 && (
                     <div className="p-4 text-gray-500">No employees found.</div>
                 )}
@@ -171,7 +159,7 @@ export default function EmployeesIndex() {
                 onClose={closeModal}
                 onSuccess={() => {
                     closeModal();
-                    router.reload(); // 🔥 THIS refreshes table instantly
+                    router.reload();
                 }}
             />
         </>

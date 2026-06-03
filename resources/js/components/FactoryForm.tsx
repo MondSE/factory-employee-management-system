@@ -1,46 +1,54 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Input } from './ui/input';
 
 type Factory = {
-    id: number;
+    id?: number;
     factory_name: string;
     location: string;
-    email?: string;
-    website?: string;
+    email: string;
 };
 
 type Props = {
     show: boolean;
-    onClose: () => void;
     factory: Factory | null;
+    onClose: () => void;
+    onSuccess?: () => void;
 };
 
-const emptyForm = {
+const emptyForm: Factory = {
     factory_name: '',
     location: '',
     email: '',
-    website: '',
 };
 
-export default function FactoryForm({ show, onClose, factory }: Props) {
+export default function FactoryForm({
+    show,
+    factory,
+    onClose,
+    onSuccess,
+}: Props) {
+    const isEdit = !!factory?.id;
+
+    const [form, setForm] = useState<Factory>(emptyForm);
     const [loading, setLoading] = useState(false);
 
-    const [form, setForm] = useState(emptyForm);
+    // 🔥 KEY FIX: reset form WITHOUT useEffect
+    const openForm = () => {
+        setForm(
+            factory
+                ? {
+                      factory_name: factory.factory_name ?? '',
+                      location: factory.location ?? '',
+                      email: factory.email ?? '',
+                  }
+                : emptyForm,
+        );
+    };
 
-    // ✅ Sync form when editing / switching factory
-    useEffect(() => {
-        if (factory) {
-            setForm({
-                factory_name: factory.factory_name ?? '',
-                location: factory.location ?? '',
-                email: factory.email ?? '',
-                website: factory.website ?? '',
-            });
-        } else {
-            setForm(emptyForm);
-        }
-    }, [factory, show]);
+    // trigger reset when opening modal
+    if (show && form.factory_name === '' && factory) {
+        openForm();
+    }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -51,103 +59,69 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
         }));
     };
 
-    const handleClose = () => {
-        setForm(emptyForm);
-        onClose();
-    };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        if (factory?.id) {
-            router.put(`/factories/${factory.id}`, form, {
-                onFinish: () => {
-                    setLoading(false);
-                    handleClose();
-                },
-            });
+        const options = {
+            onFinish: () => {
+                setLoading(false);
+                onClose();
+                onSuccess?.();
+            },
+        };
+
+        if (isEdit && factory?.id) {
+            router.put(`/factories/${factory.id}`, form, options);
         } else {
-            router.post('/factories', form, {
-                onFinish: () => {
-                    setLoading(false);
-                    handleClose();
-                },
-            });
+            router.post('/factories', form, options);
         }
+    };
+
+    const handleClose = () => {
+        setForm(emptyForm); // reset safely
+        onClose();
     };
 
     if (!show) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+            <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
                 <h2 className="mb-4 text-lg font-bold text-gray-700">
-                    {factory ? 'Edit Factory' : 'Add Factory'}
+                    {isEdit ? 'Edit Factory' : 'Create Factory'}
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Factory Name */}
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">
-                            Factory Name
-                        </label>
-                        <Input
-                            className="text-black"
-                            name="factory_name"
-                            value={form.factory_name}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                    <input
+                        name="factory_name"
+                        value={form.factory_name}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="Factory name"
+                    />
 
-                    {/* Location */}
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">
-                            Location
-                        </label>
-                        <Input
-                            className="text-black"
-                            name="location"
-                            value={form.location}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                    <input
+                        name="location"
+                        value={form.location}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="Location"
+                    />
 
-                    {/* Email */}
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">
-                            Email
-                        </label>
-                        <Input
-                            className="text-black"
-                            name="email"
-                            type="email"
-                            value={form.email}
-                            onChange={handleChange}
-                        />
-                    </div>
+                    <input
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        className="w-full rounded border p-2 text-gray-700"
+                        placeholder="Email"
+                    />
 
-                    {/* Website */}
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">
-                            Website
-                        </label>
-                        <Input
-                            className="text-black"
-                            name="website"
-                            value={form.website}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    {/* Actions */}
                     <div className="flex justify-end gap-2 pt-2">
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="rounded border px-4 py-2 text-gray-700"
+                            className="rounded bg-gray-300 px-3 py-1"
                         >
                             Cancel
                         </button>
@@ -155,17 +129,13 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`rounded px-4 py-2 text-white ${
-                                loading
-                                    ? 'cursor-not-allowed bg-blue-400'
-                                    : 'bg-blue-600'
-                            }`}
+                            className="rounded bg-blue-600 px-3 py-1 text-white"
                         >
                             {loading
                                 ? 'Saving...'
-                                : factory
+                                : isEdit
                                   ? 'Update'
-                                  : 'Save'}
+                                  : 'Create'}
                         </button>
                     </div>
                 </form>
