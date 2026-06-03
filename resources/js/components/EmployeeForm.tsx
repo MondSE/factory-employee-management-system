@@ -70,6 +70,9 @@ export default function EmployeeForm({
                     setLoading(false);
                     onClose();
                 },
+                onSuccess: () => {
+                    onSuccess?.(); // 🔥 use it here
+                },
             });
         }
     };

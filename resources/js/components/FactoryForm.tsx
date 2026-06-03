@@ -56,16 +56,18 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
         e.preventDefault();
         setLoading(true);
 
-        const request = factory?.id
-            ? router.put(`/factories/${factory.id}`, form)
-            : router.post('/factories', form);
+        const options = {
+            onFinish: () => {
+                setLoading(false);
+                handleClose();
+            },
+        };
 
-        router.on('finish', () => {
-            setLoading(false);
-            handleClose();
-        });
-
-        request;
+        if (factory?.id) {
+            router.put(`/factories/${factory.id}`, form, options);
+        } else {
+            router.post('/factories', form, options);
+        }
     };
 
     if (!show) return null;
