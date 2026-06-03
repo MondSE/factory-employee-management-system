@@ -1,4 +1,4 @@
-import { Head, usePage, router } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { useRef, useState, useEffect } from 'react';
 import EmployeeTable from '@/components/EmployeeTable';
 import EmployeeForm from '@/components/EmployeeForm';
@@ -35,63 +35,95 @@ type PageProps = {
 export default function EmployeesIndex() {
     const { employees, factories } = usePage<PageProps>().props;
 
-    const data = employees?.data ?? [];
-    const links = employees?.links ?? [];
+    // 🔥 LOCAL STATE (dynamic list)
+    const [employeesData, setEmployeesData] = useState(employees);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
         null,
     );
-    const [error, setError] = useState<string | null>(null);
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // cleanup debounce
     useEffect(() => {
         return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, []);
 
+    // 🔥 FETCH FUNCTION (NO PAGE RELOAD)
+    const fetchEmployees = async (params: {
+        search?: string;
+        page?: number;
+    }) => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const query = new URLSearchParams();
+
+            if (params.search) query.append('search', params.search);
+            if (params.page) query.append('page', String(params.page));
+
+            const res = await fetch(`/api/employees?${query.toString()}`, {
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to load employees');
+            }
+
+            const json = await res.json();
+
+            // assuming backend returns same structure
+            setEmployeesData(json.employees);
+        } catch (err: any) {
+            setError(err.message || 'Something went wrong');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 🔥 SEARCH (DEBOUNCED)
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearch(value);
 
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
         timeoutRef.current = setTimeout(() => {
-            setError(null);
-
-            router.get(
-                '/employees',
-                { search: value, page: 1 },
-                {
-                    preserveState: true,
-                    replace: true,
-                    onError: () => {
-                        setError('Failed to load employees');
-                    },
-                },
-            );
+            fetchEmployees({ search: value, page: 1 });
         }, 400);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (!confirm('Delete this employee?')) return;
 
-        setError(null);
+        try {
+            setError(null);
 
-        router.delete(`/employees/${id}`, {
-            preserveScroll: true,
-            onError: () => {
-                setError('Failed to delete employee');
-            },
-        });
+            const res = await fetch(`/api/employees/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN':
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute('content') || '',
+                },
+            });
+
+            if (!res.ok) throw new Error();
+
+            // 🔥 refresh list after delete
+            fetchEmployees({ search });
+        } catch {
+            setError('Failed to delete employee');
+        }
     };
 
     const handleCreate = () => {
@@ -109,6 +141,9 @@ export default function EmployeesIndex() {
         setSelectedEmployee(null);
     };
 
+    const data = employeesData?.data ?? [];
+    const links = employeesData?.links ?? [];
+
     return (
         <>
             <Head title="Employees" />
@@ -119,10 +154,7 @@ export default function EmployeesIndex() {
                     <h1 className="text-2xl font-bold">Employees</h1>
 
                     <div className="flex gap-2">
-                        <Button
-                            onClick={handleCreate}
-                            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-800"
-                        >
+                        <Button onClick={handleCreate}>
                             <BadgePlus />
                         </Button>
 
@@ -135,39 +167,33 @@ export default function EmployeesIndex() {
                     </div>
                 </div>
 
-                {/* CARDS */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-xl border p-4">
-                        <p className="text-sm text-gray-500">Total Factories</p>
-                        <p className="text-2xl font-bold">{factories.length}</p>
+                {/* LOADING */}
+                {loading && (
+                    <div className="p-3 text-blue-600">
+                        Loading employees...
                     </div>
-
-                    <div className="rounded-xl border p-4">
-                        <p className="text-sm text-gray-500">Total Employees</p>
-                        <p className="text-2xl font-bold">{employees.total}</p>
-                    </div>
-
-                    <div className="rounded-xl border p-4">
-                        <p className="text-sm text-gray-500">Current Page</p>
-                        <p className="text-2xl font-bold">
-                            {employees.current_page}
-                        </p>
-                    </div>
-                </div>
+                )}
 
                 {/* ERROR */}
                 {error && (
                     <div className="rounded border border-red-300 bg-red-50 p-3 text-red-600">
-                        {error}
+                        ⚠️ {error}
                     </div>
                 )}
 
+                {/* EMPTY STATE */}
+                {!loading && data.length === 0 && (
+                    <div className="p-4 text-gray-500">No employees found.</div>
+                )}
+
                 {/* TABLE */}
-                <EmployeeTable
-                    data={data}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                />
+                {!loading && data.length > 0 && (
+                    <EmployeeTable
+                        data={data}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                    />
+                )}
 
                 {/* PAGINATION */}
                 <div className="flex justify-center gap-2">
@@ -175,7 +201,17 @@ export default function EmployeesIndex() {
                         <Button
                             key={i}
                             disabled={!link.url}
-                            onClick={() => link.url && router.visit(link.url)}
+                            onClick={() => {
+                                if (link.url) {
+                                    const url = new URL(link.url);
+                                    const page = url.searchParams.get('page');
+
+                                    fetchEmployees({
+                                        search,
+                                        page: Number(page),
+                                    });
+                                }
+                            }}
                             className={`rounded border px-3 py-1 text-sm ${
                                 link.active
                                     ? 'bg-blue-500 text-white'
@@ -191,7 +227,7 @@ export default function EmployeesIndex() {
 
             {/* MODAL */}
             <EmployeeForm
-                key={selectedEmployee?.id ?? 'create'} // ✅ FIXED
+                key={selectedEmployee?.id ?? 'create'}
                 show={showModal}
                 employee={selectedEmployee}
                 factories={factories ?? []}

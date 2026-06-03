@@ -38,4 +38,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
     });
+
 require __DIR__.'/settings.php';
