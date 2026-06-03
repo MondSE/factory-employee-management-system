@@ -25,22 +25,34 @@ const emptyForm = {
 
 export default function FactoryForm({ show, onClose, factory }: Props) {
     const [loading, setLoading] = useState(false);
-
     const [form, setForm] = useState(emptyForm);
 
-    // ✅ Sync form when editing / switching factory
+    // ✅ safer sync (prevents unnecessary re-render loops in CI lint)
     useEffect(() => {
+        if (!show) return;
+
         if (factory) {
-            setForm({
+            const nextForm = {
                 factory_name: factory.factory_name ?? '',
                 location: factory.location ?? '',
                 email: factory.email ?? '',
                 website: factory.website ?? '',
+            };
+
+            setForm((prev) => {
+                // avoid setting same state again (lint-safe)
+                const isSame =
+                    prev.factory_name === nextForm.factory_name &&
+                    prev.location === nextForm.location &&
+                    prev.email === nextForm.email &&
+                    prev.website === nextForm.website;
+
+                return isSame ? prev : nextForm;
             });
         } else {
             setForm(emptyForm);
         }
-    }, [factory, show]);
+    }, [factory?.id, show]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -60,21 +72,17 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
         e.preventDefault();
         setLoading(true);
 
-        if (factory?.id) {
-            router.put(`/factories/${factory.id}`, form, {
-                onFinish: () => {
-                    setLoading(false);
-                    handleClose();
-                },
-            });
-        } else {
-            router.post('/factories', form, {
-                onFinish: () => {
-                    setLoading(false);
-                    handleClose();
-                },
-            });
-        }
+        const request = factory?.id
+            ? router.put(`/factories/${factory.id}`, form)
+            : router.post('/factories', form);
+
+        // Inertia doesn't return promise by default → use events
+        router.on('finish', () => {
+            setLoading(false);
+            handleClose();
+        });
+
+        request;
     };
 
     if (!show) return null;
