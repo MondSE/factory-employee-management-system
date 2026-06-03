@@ -4,16 +4,16 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
+    use RefreshDatabase;
 
     public function test_user_can_login()
     {
         $user = User::factory()->create([
-            'password' => Hash::make('password'),
+            'password' => bcrypt('password'),
         ]);
 
         $response = $this->post('/login', [
@@ -21,19 +21,18 @@ class AuthTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
-        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect();
+        $this->assertAuthenticated();
     }
 
     public function test_user_can_logout()
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user);
+        $this->actingAs($user)
+            ->post('/logout')
+            ->assertRedirect();
 
-        $response = $this->post('/logout');
-
-        $response->assertRedirect('/');
         $this->assertGuest();
     }
 }

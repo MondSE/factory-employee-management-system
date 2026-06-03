@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Employee extends Model
 {
-    use HasFactory;
     //
     protected $fillable = [
         'firstname', 'lastname', 'factory_id', 'email', 'phone'
@@ -32,5 +31,12 @@ class Employee extends Model
         static::deleted(function ($employee) {
             ModelEventService::log('deleted', $employee);
         });
+    }
+
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\EmployeeFactory::new();
     }
 }
