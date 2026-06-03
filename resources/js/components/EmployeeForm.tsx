@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 
 type Factory = {
@@ -32,15 +32,31 @@ export default function EmployeeForm({
 }: Props) {
     const isEdit = !!employee?.id;
 
-    const [form, setForm] = useState<Employee>({
-        firstname: employee?.firstname ?? '',
-        lastname: employee?.lastname ?? '',
-        email: employee?.email ?? '',
-        phone: employee?.phone ?? '',
-        factory_id: employee?.factory_id ?? undefined,
-    });
+    const emptyForm: Employee = {
+        firstname: '',
+        lastname: '',
+        email: '',
+        phone: '',
+        factory_id: undefined,
+    };
 
+    const [form, setForm] = useState<Employee>(emptyForm);
     const [loading, setLoading] = useState(false);
+
+    // Sync employee → form
+    useEffect(() => {
+        if (employee) {
+            setForm({
+                firstname: employee.firstname ?? '',
+                lastname: employee.lastname ?? '',
+                email: employee.email ?? '',
+                phone: employee.phone ?? '',
+                factory_id: employee.factory_id ?? undefined,
+            });
+        } else {
+            setForm(emptyForm);
+        }
+    }, [employee?.id]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -49,7 +65,12 @@ export default function EmployeeForm({
 
         setForm((prev) => ({
             ...prev,
-            [name]: name === 'factory_id' ? Number(value) || undefined : value,
+            [name]:
+                name === 'factory_id'
+                    ? value
+                        ? Number(value)
+                        : undefined
+                    : value,
         }));
     };
 
@@ -57,20 +78,18 @@ export default function EmployeeForm({
         e.preventDefault();
         setLoading(true);
 
+        const options = {
+            onFinish: () => {
+                setLoading(false);
+                onClose();
+                onSuccess?.(); // ✅ FIXED
+            },
+        };
+
         if (isEdit && employee?.id) {
-            router.put(`/employees/${employee.id}`, form, {
-                onFinish: () => {
-                    setLoading(false);
-                    onClose();
-                },
-            });
+            router.put(`/employees/${employee.id}`, form, options);
         } else {
-            router.post('/employees', form, {
-                onFinish: () => {
-                    setLoading(false);
-                    onClose();
-                },
-            });
+            router.post('/employees', form, options);
         }
     };
 
