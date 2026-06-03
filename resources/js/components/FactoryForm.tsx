@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import { Input } from './ui/input';
 
@@ -16,15 +16,31 @@ type Props = {
     factory: Factory | null;
 };
 
+const emptyForm = {
+    factory_name: '',
+    location: '',
+    email: '',
+    website: '',
+};
+
 export default function FactoryForm({ show, onClose, factory }: Props) {
     const [loading, setLoading] = useState(false);
 
-    const [form, setForm] = useState({
-        factory_name: factory?.factory_name ?? '',
-        location: factory?.location ?? '',
-        email: factory?.email ?? '',
-        website: factory?.website ?? '',
-    });
+    const [form, setForm] = useState(emptyForm);
+
+    // ✅ Sync form when editing / switching factory
+    useEffect(() => {
+        if (factory) {
+            setForm({
+                factory_name: factory.factory_name ?? '',
+                location: factory.location ?? '',
+                email: factory.email ?? '',
+                website: factory.website ?? '',
+            });
+        } else {
+            setForm(emptyForm);
+        }
+    }, [factory, show]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -35,6 +51,11 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
         }));
     };
 
+    const handleClose = () => {
+        setForm(emptyForm);
+        onClose();
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -43,14 +64,14 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
             router.put(`/factories/${factory.id}`, form, {
                 onFinish: () => {
                     setLoading(false);
-                    onClose();
+                    handleClose();
                 },
             });
         } else {
             router.post('/factories', form, {
                 onFinish: () => {
                     setLoading(false);
-                    onClose();
+                    handleClose();
                 },
             });
         }
@@ -125,7 +146,7 @@ export default function FactoryForm({ show, onClose, factory }: Props) {
                     <div className="flex justify-end gap-2 pt-2">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="rounded border px-4 py-2 text-gray-700"
                         >
                             Cancel

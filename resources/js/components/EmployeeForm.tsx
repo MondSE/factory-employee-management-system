@@ -20,6 +20,7 @@ type Props = {
     employee: Employee | null;
     factories: Factory[];
     onClose: () => void;
+    onSuccess?: () => void;
 };
 
 export default function EmployeeForm({
@@ -27,6 +28,7 @@ export default function EmployeeForm({
     employee,
     factories,
     onClose,
+    onSuccess,
 }: Props) {
     const isEdit = !!employee?.id;
 
