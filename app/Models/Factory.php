@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Services\ModelEventService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Factory extends Model
 {
+    use HasFactory;
     //
     protected $fillable = [
         'factory_name', 'location', 'email', 'website'

@@ -16,22 +16,15 @@ type Props = {
     factory: Factory | null;
 };
 
-const emptyForm = {
-    factory_name: '',
-    location: '',
-    email: '',
-    website: '',
-};
-
 export default function FactoryForm({ show, onClose, factory }: Props) {
     const [loading, setLoading] = useState(false);
 
-    const [form, setForm] = useState(() => ({
+    const [form, setForm] = useState({
         factory_name: factory?.factory_name ?? '',
         location: factory?.location ?? '',
         email: factory?.email ?? '',
         website: factory?.website ?? '',
-    }));
+    });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
